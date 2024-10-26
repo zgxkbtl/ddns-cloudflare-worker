@@ -144,21 +144,29 @@ export default {
         const searchParams = incomingUrl.searchParams;
         console.log(incomingUrl);
         if (!searchParams.has("ipv6")) {
-            return new Response(`
-                Please provide an IPv6 address.
-                curl https://cloudflare-ip.html.zone/
-                curl http://cloudflare-ip-v6.html.zone/
-
-                Example:
-                curl ${incomingUrl.origin}${incomingUrl.pathname}?ipv6=fe80::2265:9293:b395:59b7&name=example
-                `, {
-                status: 400,
-                headers: { "Content-Type": "text/plain" }
-            });
+            return new Response(
+                `Please provide an IPv6 address.\n` +
+                `curl https://cloudflare-ip.html.zone/\n` +
+                `curl http://cloudflare-ip-v6.html.zone/\n\n` +
+                `Example:\n` +
+                `curl ${incomingUrl.origin}${incomingUrl.pathname}?ipv6=fe80::2265:9293:b395:59b7&name=example&pwd=1234\n`,
+                {
+                    status: 400,
+                    headers: { "Content-Type": "text/plain" }
+                }
+            );
         }
 
         const ipv6 = searchParams.get("ipv6") as string
         const name = searchParams.get("name") || `${generateRandomString(8)}.random`;
+        const password = searchParams.get("pwd") || "_EMPTY_";
+
+        if (password !== env.DDNS_PASSWORD) {
+            return new Response("Invalid password", {
+                status: 401,
+                headers: { "Content-Type": "text/plain" }
+            });
+        }
 
         // fetch the DNS records
         const dnsRecords = await fetchDnsRecords(name, env);
